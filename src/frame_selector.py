@@ -1,10 +1,58 @@
+import csv
 import time
+from pathlib import Path
 
 import cv2
 import numpy as np
 
+# 处理流程：
+# 1. 建立文件名映射表：扫描 data/videos 下的原始视频文件，按稳定顺序生成从 1
+#    开始的序号，并写入 video_index.csv。表中 origin_file_name 保留原始文件名，
+#    index 是后续处理使用的编号，便于在编号结果和源文件之间追溯。
+# 2. 智能选帧：后续对每个视频按映射表中的 index 处理，把选出的代表帧保存到
+#    data/frames/{index} 文件夹中。
+
 MIN_FRAMES_DEFAULT = 8  # 条件允许时至少抽取这么多帧
 FRAMES_PER_SECOND_DEFAULT = 0.5  # 每 2 秒视频抽 1 帧
+VIDEO_EXTENSIONS_DEFAULT = frozenset(
+    {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v", ".flv", ".wmv"}
+)
+
+
+# 生成视频源文件名索引表
+def build_video_index_csv(
+    video_dir: str | Path,
+    csv_path: str | Path | None = None,
+    *,
+    video_extensions: set[str] | frozenset[str] | tuple[str, ...] | None = None,
+) -> list[dict[str, str | int]]:
+    """为视频目录生成源文件名到编号的 CSV 映射表。"""
+    video_dir = Path(video_dir)
+    if csv_path is None:
+        csv_path = video_dir / "video_index.csv"
+    else:
+        csv_path = Path(csv_path)
+
+    extensions = video_extensions or VIDEO_EXTENSIONS_DEFAULT
+    normalized_extensions = {ext.lower() for ext in extensions}
+    video_paths = sorted(
+        path
+        for path in video_dir.iterdir()
+        if path.is_file() and path.suffix.lower() in normalized_extensions
+    )
+
+    rows: list[dict[str, str | int]] = [
+        {"origin_file_name": path.name, "index": index}
+        for index, path in enumerate(video_paths, start=1)
+    ]
+
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=["origin_file_name", "index"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return rows
 
 
 def frame_quality_metrics(

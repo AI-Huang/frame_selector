@@ -6,5 +6,8 @@ dist/
 wheels/
 *.egg-info
 
+# Runtime data lives outside the repository; data/ is a symlink entrypoint.
+data
+
 # Virtual environments
 .venv
