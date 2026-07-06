@@ -10,15 +10,36 @@
 uv sync
 ```
 
-安装完成后可以验证模块是否可导入：
+## main.py 用法
+
+`main.py` 使用 YOLO26x 对抽帧结果做预测。默认读取 `data/frames`，模型权重使用 `data/models/yolo26x.pt`，结果写入 `data/yolo26x/runs/predict`。
 
 ```bash
-uv run python -c "from frame_selector import select_from_frame_dir; print('ok')"
+uv run python main.py
 ```
+
+指定输入目录：
+
+```bash
+uv run python main.py data/frames
+```
+
+常用参数：
+
+```bash
+uv run python main.py data/frames --conf 0.35 --imgsz 960 --device 0
+```
+
+- `source`：图片、视频、目录、glob 或 URL。目录会递归扫描图片。
+- `--model`：模型权重路径。默认 `data/models/yolo26x.pt`。
+- `--project`：输出目录。默认 `data/yolo26x/runs`。
+- `--name`：运行名称。默认 `predict`。
+- `--no-save`：只跑预测，不保存标注图。
 
 ## 基本用法
 
 传入按时间顺序排列的图片路径列表，函数会返回被选中的图片路径，以及对应的元数据和质量分。
+运行数据请放在仓库根目录的 `data/` 入口下；该入口按解耦原则指向 `$HOME/Data/frame-selector`，避免把帧文件、缓存或输出结果写入源码目录。
 
 ```python
 from pathlib import Path
@@ -26,7 +47,7 @@ from pathlib import Path
 from frame_selector import select_from_frame_dir
 
 
-frame_dir = Path("frames")
+frame_dir = Path("data/frames")
 frame_paths = sorted(str(path) for path in frame_dir.glob("*.jpg"))
 
 selected_paths, fps, total, timing, frame_quality, reject_info = select_from_frame_dir(
