@@ -38,7 +38,7 @@ uv run python main.py data/frames
 uv run python main.py data/frames --conf 0.35 --imgsz 960 --device 0
 ```
 
-- `source`：图片、视频、目录、glob 或 URL。目录会递归扫描图片。
+- `source`：本地图片、视频或目录。目录会递归扫描图片。
 - `--model`：模型权重路径。默认 `data/models/yolo26x.pt`。
 - `--project`：输出目录。默认 `data/yolo26x/runs`。
 - `--name`：运行名称。默认 `predict`。
