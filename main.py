@@ -1,4 +1,6 @@
 import argparse
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 from ultralytics import YOLO
@@ -21,6 +23,16 @@ IMAGE_EXTENSIONS = {
 MODELS_DIR = Path("data/models")
 DEFAULT_MODEL_NAME = "yolo26x.pt"
 DEFAULT_MODEL_PATH = MODELS_DIR / DEFAULT_MODEL_NAME
+
+
+@dataclass(frozen=True)
+class DirectorySource:
+    root: Path
+    image_paths: list[Path]
+
+
+def has_glob_magic(source: str) -> bool:
+    return any(char in source for char in "*?[")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -66,6 +78,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inference device, for example 'cpu', '0', or '0,1'.",
     )
     parser.add_argument(
+        "--batch",
+        type=int,
+        default=1,
+        help="Batch size for non-recursive sources. Recursive directories are processed one image at a time. Default: 1.",
+    )
+    parser.add_argument(
         "--no-save",
         action="store_true",
         help="Run prediction without saving annotated images or videos.",
@@ -73,13 +91,23 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def resolve_source(source: str) -> str | Path | list[str]:
+def resolve_source(source: str) -> str | Path | DirectorySource:
     if source.startswith(("http://", "https://")):
         return source
 
     source_path = Path(source)
-    if not source_path.is_dir():
+    if source_path.exists() and not source_path.is_dir():
         return source_path
+
+    if not source_path.is_dir():
+        if has_glob_magic(source):
+            return source_path
+        raise FileNotFoundError(
+            f"Source does not exist: {source_path}\n"
+            "Create frames first, for example:\n"
+            "  uv run python scripts/extract_all_frames.py\n"
+            "or pass an existing image, video, directory, glob, or URL."
+        )
 
     image_paths = sorted(
         path
@@ -88,7 +116,7 @@ def resolve_source(source: str) -> str | Path | list[str]:
     )
     if not image_paths:
         raise FileNotFoundError(f"No images found recursively in {source_path}")
-    return [str(path) for path in image_paths]
+    return DirectorySource(source_path, image_paths)
 
 
 def resolve_model(model: str) -> str:
@@ -98,21 +126,47 @@ def resolve_model(model: str) -> str:
     return str(model_path)
 
 
+def consume_prediction(results) -> None:
+    for _ in results:
+        pass
+
+
 def main() -> int:
     args = build_parser().parse_args()
-    source = resolve_source(args.source)
+    try:
+        source = resolve_source(args.source)
+    except FileNotFoundError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
 
     model = YOLO(resolve_model(args.model))
-    model.predict(
-        source=source,
-        project=args.project,
-        name=args.name,
-        conf=args.conf,
-        imgsz=args.imgsz,
-        device=args.device,
-        save=not args.no_save,
-        exist_ok=True,
-    )
+    predict_kwargs = {
+        "project": str(Path(args.project).resolve()),
+        "conf": args.conf,
+        "imgsz": args.imgsz,
+        "device": args.device,
+        "save": not args.no_save,
+        "exist_ok": True,
+        "stream": True,
+    }
+
+    if isinstance(source, DirectorySource):
+        base_name = args.name.strip("/")
+        for image_path in source.image_paths:
+            relative_parent = image_path.parent.relative_to(source.root)
+            run_name = str(Path(base_name) / relative_parent)
+            consume_prediction(
+                model.predict(source=str(image_path), **predict_kwargs, name=run_name)
+            )
+    else:
+        consume_prediction(
+            model.predict(
+                source=source,
+                batch=max(args.batch, 1),
+                **predict_kwargs,
+                name=args.name,
+            )
+        )
     return 0
 
 
