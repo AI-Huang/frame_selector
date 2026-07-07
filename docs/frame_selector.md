@@ -12,7 +12,7 @@ uv sync
 
 ## main.py 用法
 
-`main.py` 使用 YOLO26x 对抽帧结果做预测。默认读取 `data/frames`，模型权重使用 `data/models/yolo26x.pt`，visualization 图写入 `data/inference/predict`，结构化 JSON 结果写入 `data/inference/yolo26x/results`。
+`main.py` 使用 YOLO26x 对抽帧结果做预测。默认读取 `data/frames`，模型权重使用 `data/models/yolo26x.pt`，visualization 图写入 `data/inference/predict`，结构化 JSON 结果写入 `data/inference/{model_name}/results`。默认模型名是 `yolo26x`。
 
 如果还没有 `data/frames`，先从 `data/videos/video_index.csv` 中列出的视频抽帧：
 

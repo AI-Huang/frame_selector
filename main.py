@@ -123,10 +123,12 @@ def main() -> int:
         print(f"error: Source is not a supported image: {source_path}", file=sys.stderr)
         return 2
 
-    model = load_model(Path(args.model))
+    model_path = Path(args.model)
+    model = load_model(model_path)
     inferencer = YOLOInferencer(
         model,
         output_dir=args.output_dir,
+        model_name=model_path.stem,
         data_dir=DATA_DIR,
         conf=args.conf,
         imgsz=args.imgsz,

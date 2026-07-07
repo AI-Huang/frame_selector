@@ -11,7 +11,7 @@
 | `data/models/` | 默认模型权重目录。默认权重路径是 `data/models/yolo26x.pt`。 |
 | `data/inference/` | 默认推理结果目录。YOLO visualization 图默认写入这里。 |
 | `data/inference/predict/` | 默认 run name 为 `predict` 时的输出目录。 |
-| `data/inference/yolo26x/results/` | YOLO 结构化推理结果目录，每张输入图片对应一个 JSON 文件。 |
+| `data/inference/{model_name}/results/` | YOLO 结构化推理结果目录，每张输入图片对应一个 JSON 文件。默认模型名是 `yolo26x`。 |
 | `docs/` | 项目文档目录，记录使用方式、管线和目录约定。 |
 | `scripts/` | 辅助脚本目录，例如抽帧脚本。 |
 | `src/` | 核心源码目录，包含帧选择逻辑和 YOLO 推理封装。 |
@@ -72,7 +72,7 @@ uv run python main.py
 
 8. 保存 YOLO visualization 图和 JSON 结果。
 
-   默认会保存结果图。如果使用 `--no-save`，程序仍会执行推理，但不保存 visualization 图。结构化结果会保存到 `data/inference/yolo26x/results/`，每张输入图片对应一个 `.json` 文件。
+   默认会保存结果图。如果使用 `--no-save`，程序仍会执行推理，但不保存 visualization 图。结构化结果会保存到 `data/inference/{model_name}/results/`，每张输入图片对应一个 `.json` 文件。默认模型名是 `yolo26x`。
 
 ## 常用命令
 

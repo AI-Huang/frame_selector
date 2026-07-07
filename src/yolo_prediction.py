@@ -4,7 +4,7 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 
 DATA_DIR = Path("data")
-RESULTS_DIR = DATA_DIR / "inference" / "yolo26x" / "results"
+RESULTS_ROOT_DIR = DATA_DIR / "inference"
 
 
 class YOLOInferencer:
@@ -13,7 +13,8 @@ class YOLOInferencer:
 
     :param model: Loaded Ultralytics YOLO model.
     :param output_dir: Directory where YOLO visualization images are saved.
-    :param results_dir: Directory where YOLO JSON results are saved.
+    :param model_name: Model name used in the JSON results directory.
+    :param results_root_dir: Directory where model-specific JSON results are saved.
     :param conf: Confidence threshold.
     :param imgsz: YOLO inference input size. Larger values preserve more detail,
         but use more GPU memory.
@@ -26,7 +27,8 @@ class YOLOInferencer:
         model: YOLO,
         *,
         output_dir: str | Path,
-        results_dir: str | Path = RESULTS_DIR,
+        model_name: str,
+        results_root_dir: str | Path = RESULTS_ROOT_DIR,
         data_dir: str | Path = DATA_DIR,
         conf: float,
         imgsz: int,
@@ -35,7 +37,8 @@ class YOLOInferencer:
     ) -> None:
         self.model = model
         self.output_dir = Path(output_dir)
-        self.results_dir = Path(results_dir)
+        self.model_name = model_name
+        self.results_root_dir = Path(results_root_dir)
         self.data_dir = Path(data_dir)
         self.conf = conf
         self.imgsz = imgsz
@@ -95,7 +98,12 @@ class YOLOInferencer:
     def _result_output_path(self, result: Results) -> Path:
         source_path = Path(result.path)
         relative_path = self._data_relative_path(source_path)
-        return self.results_dir / relative_path.with_suffix(".json")
+        return (
+            self.results_root_dir
+            / self.model_name
+            / "results"
+            / relative_path.with_suffix(".json")
+        )
 
     def _prediction_name(self, name: str, image_path: str | Path) -> str:
         base_name = name.strip("/")
@@ -126,7 +134,8 @@ def predict_source(
     source: str | Path | list[str | Path],
     *,
     output_dir: str | Path,
-    results_dir: str | Path = RESULTS_DIR,
+    model_name: str,
+    results_root_dir: str | Path = RESULTS_ROOT_DIR,
     data_dir: str | Path = DATA_DIR,
     name: str,
     conf: float,
@@ -141,7 +150,8 @@ def predict_source(
     :param model: Loaded Ultralytics YOLO model.
     :param source: Local image path or image path list.
     :param output_dir: Directory where YOLO visualization images are saved.
-    :param results_dir: Directory where YOLO JSON results are saved.
+    :param model_name: Model name used in the JSON results directory.
+    :param results_root_dir: Directory where model-specific JSON results are saved.
     :param data_dir: Runtime data directory used to derive stable output names.
     :param name: Run name under the output directory.
     :param conf: Confidence threshold.
@@ -154,7 +164,8 @@ def predict_source(
     inferencer = YOLOInferencer(
         model,
         output_dir=output_dir,
-        results_dir=results_dir,
+        model_name=model_name,
+        results_root_dir=results_root_dir,
         data_dir=data_dir,
         conf=conf,
         imgsz=imgsz,
