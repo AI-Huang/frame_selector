@@ -4,7 +4,7 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
-from yolo_prediction import DirectorySource, predict_source
+from yolo_prediction import DATA_DIR, YOLOInferencer
 
 IMAGE_EXTENSIONS = {
     ".avif",
@@ -21,7 +21,7 @@ IMAGE_EXTENSIONS = {
     ".tiff",
     ".webp",
 }
-MODELS_DIR = Path("data/models")
+MODELS_DIR = DATA_DIR / "models"
 DEFAULT_MODEL_NAME = "yolo26x.pt"
 DEFAULT_MODEL_PATH = MODELS_DIR / DEFAULT_MODEL_NAME
 
@@ -34,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
         "source",
         nargs="?",
         default="data/frames",
-        help="Local image, video, or directory source. Directories are scanned recursively. Default: data/frames.",
+        help="Local image or directory source. Directories are scanned recursively. Default: data/frames.",
     )
     parser.add_argument(
         "--model",
@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--project",
         default="data/yolo26x/runs",
-        help="Directory where prediction results are saved.",
+        help="Directory where YOLO visualization images are saved.",
     )
     parser.add_argument(
         "--name",
@@ -72,12 +72,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--batch",
         type=int,
         default=1,
-        help="Batch size for non-recursive sources. Recursive directories are processed one image at a time. Default: 1.",
+        help="Batch size for image lists grouped by DATA_DIR-relative output directory. Default: 1.",
     )
     parser.add_argument(
         "--no-save",
         action="store_true",
-        help="Run prediction without saving annotated images or videos.",
+        help="Run prediction without saving visualization images or videos.",
     )
     return parser
 
@@ -102,7 +102,7 @@ def main() -> int:
         )
         return 2
 
-    source: Path | DirectorySource
+    source: Path | list[Path]
     if source_path.is_dir():
         image_paths = sorted(
             path
@@ -114,22 +114,27 @@ def main() -> int:
                 f"error: No images found recursively in {source_path}", file=sys.stderr
             )
             return 2
-        source = DirectorySource(source_path, image_paths)
-    else:
+        source = image_paths
+    elif source_path.suffix.lower() in IMAGE_EXTENSIONS:
         source = source_path
+    else:
+        print(f"error: Source is not a supported image: {source_path}", file=sys.stderr)
+        return 2
 
     model = YOLO(resolve_model(args.model))
-    predict_source(
+    inferencer = YOLOInferencer(
         model,
-        source,
         project=args.project,
-        name=args.name,
+        data_dir=DATA_DIR,
         conf=args.conf,
         imgsz=args.imgsz,
         device=args.device,
         save=not args.no_save,
-        batch=args.batch,
     )
+    if isinstance(source, list):
+        inferencer.predict_batch(source, name=args.name, batch=args.batch)
+    else:
+        inferencer.predict(source, name=args.name)
     return 0
 
 
