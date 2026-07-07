@@ -22,6 +22,7 @@ IMAGE_EXTENSIONS = {
     ".webp",
 }
 MODELS_DIR = DATA_DIR / "models"
+INFERENCE_DIR = DATA_DIR / "inference"
 DEFAULT_MODEL_NAME = "yolo26x.pt"
 DEFAULT_MODEL_PATH = MODELS_DIR / DEFAULT_MODEL_NAME
 
@@ -43,8 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--project",
-        default="data/yolo26x/runs",
-        help="Directory where YOLO visualization images are saved.",
+        default=str(INFERENCE_DIR),
+        help=f"Directory where YOLO visualization images are saved. Default: {INFERENCE_DIR}.",
     )
     parser.add_argument(
         "--name",

@@ -12,7 +12,7 @@ uv sync
 
 ## main.py 用法
 
-`main.py` 使用 YOLO26x 对抽帧结果做预测。默认读取 `data/frames`，模型权重使用 `data/models/yolo26x.pt`，visualization 图写入 `data/yolo26x/runs/predict`。
+`main.py` 使用 YOLO26x 对抽帧结果做预测。默认读取 `data/frames`，模型权重使用 `data/models/yolo26x.pt`，visualization 图写入 `data/inference/predict`。
 
 如果还没有 `data/frames`，先从 `data/videos/video_index.csv` 中列出的视频抽帧：
 
@@ -30,7 +30,7 @@ uv run python main.py
 uv run python main.py data/frames
 ```
 
-当输入目录包含多级帧目录时，visualization 图会保留相对 `data/` 的目录结构，例如 `data/frames/1/frame_000001.jpg` 会写到 `data/yolo26x/runs/predict/frames/1/frame_000001.jpg`。
+当输入目录包含多级帧目录时，visualization 图会保留相对 `data/` 的目录结构，例如 `data/frames/1/frame_000001.jpg` 会写到 `data/inference/predict/frames/1/frame_000001.jpg`。
 
 常用参数：
 
@@ -40,7 +40,7 @@ uv run python main.py data/frames --conf 0.35 --imgsz 960 --device 0
 
 - `source`：本地图片或目录。目录会递归扫描图片。
 - `--model`：模型权重路径。默认 `data/models/yolo26x.pt`。
-- `--project`：visualization 图输出目录。默认 `data/yolo26x/runs`。
+- `--project`：visualization 图输出目录。默认 `data/inference`。
 - `--name`：运行名称。默认 `predict`。
 - `--batch`：按相对 `data/` 输出目录分组后的图片批大小。默认 `1`。
 - `--no-save`：只跑预测，不保存 visualization 图。
