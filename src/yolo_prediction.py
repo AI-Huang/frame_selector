@@ -26,6 +26,10 @@ def predict_source(
     save: bool,
     batch: int,
 ) -> None:
+    """
+    :param imgsz: YOLO inference input size. Larger values preserve more detail,
+        but use more GPU memory.
+    """
     predict_kwargs = {
         "project": str(Path(project).resolve()),
         "conf": conf,
