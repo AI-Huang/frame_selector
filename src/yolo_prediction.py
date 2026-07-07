@@ -56,7 +56,7 @@ class YOLOInferencer:
             exist_ok=True,
             name=self._prediction_name(name, image_path),
         )
-        self.save_results(results)
+        self.save_results(results, [image_path])
         return results
 
     def predict_batch(
@@ -73,31 +73,31 @@ class YOLOInferencer:
 
         results: list[Results] = []
         for run_name, run_image_paths in images_by_run_name.items():
-            results.extend(
-                self.model.predict(
-                    source=run_image_paths,
-                    batch=max(batch, 1),
-                    project=str(self.output_dir.resolve()),
-                    conf=self.conf,
-                    imgsz=self.imgsz,
-                    device=self.device,
-                    save=self.save,
-                    exist_ok=True,
-                    name=run_name,
-                )
+            run_results = self.model.predict(
+                source=run_image_paths,
+                batch=max(batch, 1),
+                project=str(self.output_dir.resolve()),
+                conf=self.conf,
+                imgsz=self.imgsz,
+                device=self.device,
+                save=self.save,
+                exist_ok=True,
+                name=run_name,
             )
-        self.save_results(results)
+            self.save_results(run_results, run_image_paths)
+            results.extend(run_results)
         return results
 
-    def save_results(self, results: list[Results]) -> None:
-        for result in results:
-            output_path = self._result_output_path(result)
+    def save_results(
+        self, results: list[Results], image_paths: list[str | Path]
+    ) -> None:
+        for result, image_path in zip(results, image_paths, strict=True):
+            output_path = self._result_output_path(image_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(result.to_json(), encoding="utf-8")
 
-    def _result_output_path(self, result: Results) -> Path:
-        source_path = Path(result.path)
-        relative_path = self._data_relative_path(source_path)
+    def _result_output_path(self, image_path: str | Path) -> Path:
+        relative_path = self._data_relative_path(image_path)
         return (
             self.results_root_dir
             / self.model_name
