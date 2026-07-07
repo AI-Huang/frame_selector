@@ -83,11 +83,12 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def resolve_model(model: str) -> str:
-    model_path = DEFAULT_MODEL_PATH if model == DEFAULT_MODEL_NAME else Path(model)
-    if model_path.parent != Path("."):
-        model_path.parent.mkdir(parents=True, exist_ok=True)
-    return str(model_path)
+def load_model(path: Path) -> YOLO:
+    if path == Path(DEFAULT_MODEL_NAME):
+        path = DEFAULT_MODEL_PATH
+    if path.parent != Path("."):
+        path.parent.mkdir(parents=True, exist_ok=True)
+    return YOLO(str(path))
 
 
 def main() -> int:
@@ -122,7 +123,7 @@ def main() -> int:
         print(f"error: Source is not a supported image: {source_path}", file=sys.stderr)
         return 2
 
-    model = YOLO(resolve_model(args.model))
+    model = load_model(Path(args.model))
     inferencer = YOLOInferencer(
         model,
         output_dir=args.output_dir,
