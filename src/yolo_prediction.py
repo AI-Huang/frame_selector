@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from ultralytics import YOLO
+from ultralytics.engine.results import Results
 
 DATA_DIR = Path("data")
-ImagePath = str | Path
 
 
 class YOLOInferencer:
@@ -38,8 +38,8 @@ class YOLOInferencer:
         self.device = device
         self.save = save
 
-    def predict(self, image_path: ImagePath, *, name: str) -> None:
-        self.model.predict(
+    def predict(self, image_path: str | Path, *, name: str) -> list[Results]:
+        return self.model.predict(
             source=str(image_path),
             project=str(self.output_dir.resolve()),
             conf=self.conf,
@@ -52,37 +52,41 @@ class YOLOInferencer:
 
     def predict_batch(
         self,
-        image_paths: list[ImagePath],
+        image_paths: list[str | Path],
         *,
         name: str,
         batch: int,
-    ) -> None:
+    ) -> list[Results]:
         images_by_run_name: dict[str, list[str]] = {}
         for image_path in image_paths:
             run_name = self._prediction_name(name, image_path)
             images_by_run_name.setdefault(run_name, []).append(str(image_path))
 
+        results: list[Results] = []
         for run_name, run_image_paths in images_by_run_name.items():
-            self.model.predict(
-                source=run_image_paths,
-                batch=max(batch, 1),
-                project=str(self.output_dir.resolve()),
-                conf=self.conf,
-                imgsz=self.imgsz,
-                device=self.device,
-                save=self.save,
-                exist_ok=True,
-                name=run_name,
+            results.extend(
+                self.model.predict(
+                    source=run_image_paths,
+                    batch=max(batch, 1),
+                    project=str(self.output_dir.resolve()),
+                    conf=self.conf,
+                    imgsz=self.imgsz,
+                    device=self.device,
+                    save=self.save,
+                    exist_ok=True,
+                    name=run_name,
+                )
             )
+        return results
 
-    def _prediction_name(self, name: str, image_path: ImagePath) -> str:
+    def _prediction_name(self, name: str, image_path: str | Path) -> str:
         base_name = name.strip("/")
         relative_parent = self._data_relative_parent(image_path)
         if relative_parent == Path("."):
             return base_name
         return str(Path(base_name) / relative_parent)
 
-    def _data_relative_parent(self, image_path: ImagePath) -> Path:
+    def _data_relative_parent(self, image_path: str | Path) -> Path:
         parent = Path(image_path).parent.resolve()
         data_dir = self.data_dir.resolve()
         try:
@@ -93,7 +97,7 @@ class YOLOInferencer:
 
 def predict_source(
     model: YOLO,
-    source: ImagePath | list[ImagePath],
+    source: str | Path | list[str | Path],
     *,
     output_dir: str | Path,
     data_dir: str | Path = DATA_DIR,
@@ -103,7 +107,7 @@ def predict_source(
     device: str | None,
     save: bool,
     batch: int,
-) -> None:
+) -> list[Results]:
     """
     Run YOLO inference and save visualization images.
 
@@ -129,7 +133,6 @@ def predict_source(
         save=save,
     )
     if isinstance(source, list):
-        inferencer.predict_batch(source, name=name, batch=batch)
-        return
+        return inferencer.predict_batch(source, name=name, batch=batch)
 
-    inferencer.predict(source, name=name)
+    return inferencer.predict(source, name=name)
