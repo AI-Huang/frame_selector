@@ -40,7 +40,7 @@ uv run python main.py data/frames --conf 0.35 --imgsz 960 --device 0
 
 - `source`：本地图片或目录。目录会递归扫描图片。
 - `--model`：模型权重路径。默认 `data/models/yolo26x.pt`。
-- `--project`：visualization 图输出目录。默认 `data/inference`。
+- `--output-dir`：visualization 图输出目录。默认 `data/inference`。
 - `--name`：运行名称。默认 `predict`。
 - `--batch`：按相对 `data/` 输出目录分组后的图片批大小。默认 `1`。
 - `--no-save`：只跑预测，不保存 visualization 图。

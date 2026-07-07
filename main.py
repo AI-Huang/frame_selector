@@ -43,14 +43,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Ultralytics model weights or YAML. Default: {DEFAULT_MODEL_PATH}.",
     )
     parser.add_argument(
-        "--project",
+        "--output-dir",
         default=str(INFERENCE_DIR),
         help=f"Directory where YOLO visualization images are saved. Default: {INFERENCE_DIR}.",
     )
     parser.add_argument(
         "--name",
         default="predict",
-        help="Run name under the project directory.",
+        help="Run name under the output directory.",
     )
     parser.add_argument(
         "--conf",
@@ -125,7 +125,7 @@ def main() -> int:
     model = YOLO(resolve_model(args.model))
     inferencer = YOLOInferencer(
         model,
-        project=args.project,
+        output_dir=args.output_dir,
         data_dir=DATA_DIR,
         conf=args.conf,
         imgsz=args.imgsz,

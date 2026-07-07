@@ -47,7 +47,7 @@ uv run python main.py
 
 5. 创建 `YOLOInferencer`。
 
-   `YOLOInferencer` 保存推理参数，包括输出目录 `project`、置信度 `conf`、输入尺寸 `imgsz`、设备 `device`、是否保存结果 `save`，以及用于计算稳定输出路径的 `data_dir`。
+   `YOLOInferencer` 保存推理参数，包括输出目录 `output_dir`、置信度 `conf`、输入尺寸 `imgsz`、设备 `device`、是否保存结果 `save`，以及用于计算稳定输出路径的 `data_dir`。
 
 6. 执行单图或批量推理。
 
@@ -102,5 +102,5 @@ uv run python main.py data/frames --no-save
 指定推理输出目录：
 
 ```bash
-uv run python main.py data/frames --project data/inference
+uv run python main.py data/frames --output-dir data/inference
 ```

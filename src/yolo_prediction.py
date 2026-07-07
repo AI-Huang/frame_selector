@@ -11,7 +11,7 @@ class YOLOInferencer:
     Run YOLO inference and save visualization images.
 
     :param model: Loaded Ultralytics YOLO model.
-    :param project: Directory where YOLO visualization images are saved.
+    :param output_dir: Directory where YOLO visualization images are saved.
     :param conf: Confidence threshold.
     :param imgsz: YOLO inference input size. Larger values preserve more detail,
         but use more GPU memory.
@@ -23,7 +23,7 @@ class YOLOInferencer:
         self,
         model: YOLO,
         *,
-        project: str | Path,
+        output_dir: str | Path,
         data_dir: str | Path = DATA_DIR,
         conf: float,
         imgsz: int,
@@ -31,20 +31,22 @@ class YOLOInferencer:
         save: bool,
     ) -> None:
         self.model = model
+        self.output_dir = Path(output_dir)
         self.data_dir = Path(data_dir)
-        self.predict_kwargs = {
-            "project": str(Path(project).resolve()),
-            "conf": conf,
-            "imgsz": imgsz,
-            "device": device,
-            "save": save,
-            "exist_ok": True,
-        }
+        self.conf = conf
+        self.imgsz = imgsz
+        self.device = device
+        self.save = save
 
     def predict(self, image_path: ImagePath, *, name: str) -> None:
         self.model.predict(
             source=str(image_path),
-            **self.predict_kwargs,
+            project=str(self.output_dir.resolve()),
+            conf=self.conf,
+            imgsz=self.imgsz,
+            device=self.device,
+            save=self.save,
+            exist_ok=True,
             name=self._prediction_name(name, image_path),
         )
 
@@ -64,7 +66,12 @@ class YOLOInferencer:
             self.model.predict(
                 source=run_image_paths,
                 batch=max(batch, 1),
-                **self.predict_kwargs,
+                project=str(self.output_dir.resolve()),
+                conf=self.conf,
+                imgsz=self.imgsz,
+                device=self.device,
+                save=self.save,
+                exist_ok=True,
                 name=run_name,
             )
 
@@ -88,7 +95,7 @@ def predict_source(
     model: YOLO,
     source: ImagePath | list[ImagePath],
     *,
-    project: str,
+    output_dir: str | Path,
     data_dir: str | Path = DATA_DIR,
     name: str,
     conf: float,
@@ -102,9 +109,9 @@ def predict_source(
 
     :param model: Loaded Ultralytics YOLO model.
     :param source: Local image path or image path list.
-    :param project: Directory where YOLO visualization images are saved.
+    :param output_dir: Directory where YOLO visualization images are saved.
     :param data_dir: Runtime data directory used to derive stable output names.
-    :param name: Run name under the project directory.
+    :param name: Run name under the output directory.
     :param conf: Confidence threshold.
     :param imgsz: YOLO inference input size. Larger values preserve more detail,
         but use more GPU memory.
@@ -114,7 +121,7 @@ def predict_source(
     """
     inferencer = YOLOInferencer(
         model,
-        project=project,
+        output_dir=output_dir,
         data_dir=data_dir,
         conf=conf,
         imgsz=imgsz,
